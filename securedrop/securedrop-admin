@@ -75,6 +75,28 @@ class SiteConfig(object):
             raise ValidationError(
                 message='Unable to resolve gnu.org using this DNS')
 
+    class ValidatePath(Validator):
+        def __init__(self, basedir):
+            self.basedir = basedir
+            super(Validator, self).__init__()
+
+        def validate(self, document):
+            if document.text == '':
+                raise ValidationError(
+                    message='an existing file name is required')
+            path = os.path.join(self.basedir, document.text)
+            if os.path.exists(path):
+                return True
+            raise ValidationError(
+                message=path + ' file does not exist')
+
+    class ValidateOptionalPath(ValidatePath):
+        def validate(self, document):
+            if document.text == '':
+                return True
+            return super(SiteConfig.ValidateOptionalPath, self).validate(
+                document)
+
     def __init__(self, args):
         self.args = args
         translations = SiteConfig.Locales(
@@ -104,6 +126,11 @@ class SiteConfig(object):
             ['dns_server', '8.8.8.8',
              u'DNS server specified during installation',
              SiteConfig.ValidateDNSServer(),
+             None],
+            ['securedrop_header_image', '',
+             u"Local filepath to your organization's logo "
+             "to be displayed on the Source Interface (optional)",
+             SiteConfig.ValidateOptionalPath(self.args.ansible_path),
              None],
         ]
 
