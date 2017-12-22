@@ -145,6 +145,11 @@ class SiteConfig(object):
              'Source Interface (requires EV cert)',
              SiteConfig.ValidateYesNo(),
              string.lower],
+            ['securedrop_app_gpg_public_key', 'SecureDrop.asc',
+             u'Local filepath to public key for '
+             'SecureDrop Application GPG public key',
+             SiteConfig.ValidatePath(self.args.ansible_path),
+             None],
         ]
 
     def load_and_update_config(self):
