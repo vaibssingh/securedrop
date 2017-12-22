@@ -3,7 +3,7 @@ FROM ubuntu@sha256:f6eed4def93a3b54da920737f0abf1a8cae2e480bb368280c898265fcaf91
 
 RUN apt-get update # 2017-11-15
 RUN apt-get install -y \
-	python-pip libpython2.7-dev libssl-dev secure-delete gnupg2 ruby redis-server
+	python-pip python-yaml libpython2.7-dev libssl-dev secure-delete gnupg2 ruby redis-server
 # refs securedrop/issues/1594
 RUN gem install sass -v 3.4.23
 
