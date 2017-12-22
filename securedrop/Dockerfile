@@ -5,7 +5,7 @@ FROM ubuntu@sha256:f6eed4def93a3b54da920737f0abf1a8cae2e480bb368280c898265fcaf91
 ENV FIREFOX_CHECKSUM=88d25053306d33658580973b063cd459a56e3596a3a298c1fb8ab1d52171d860
 
 RUN apt-get update && \
-    apt-get install -y python-pip libpython2.7-dev libssl-dev secure-delete \
+    apt-get install -y python-pip python-yaml libpython2.7-dev libssl-dev secure-delete \
                        gnupg2 ruby redis-server firefox git xvfb haveged curl \
                        gettext paxctl
 
