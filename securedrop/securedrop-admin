@@ -10,6 +10,7 @@ import argparse
 import logging
 import os
 import re
+import string
 import subprocess
 import sys
 import prompt_toolkit
@@ -97,6 +98,13 @@ class SiteConfig(object):
             return super(SiteConfig.ValidateOptionalPath, self).validate(
                 document)
 
+    class ValidateYesNo(Validator):
+        def validate(self, document):
+            text = document.text.lower()
+            if text == 'yes' or text == 'no':
+                return True
+            raise ValidationError(message="Must be either yes or no")
+
     def __init__(self, args):
         self.args = args
         translations = SiteConfig.Locales(
@@ -132,6 +140,11 @@ class SiteConfig(object):
              "to be displayed on the Source Interface (optional)",
              SiteConfig.ValidateOptionalPath(self.args.ansible_path),
              None],
+            ['securedrop_app_https_on_source_interface', 'no',
+             u'Whether HTTPS should be enabled on '
+             'Source Interface (requires EV cert)',
+             SiteConfig.ValidateYesNo(),
+             string.lower],
         ]
 
     def load_and_update_config(self):
