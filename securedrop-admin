@@ -6,5 +6,5 @@ d=$(dirname "$0")
 if test "${!#}" = "setup" ; then
    exec python "$d/admin/bootstrap.py"
 else
-   exec "$d/admin/.venv/bin/securedrop-admin" "$@"
+   exec "$d/admin/.venv/bin/securedrop-admin" --root "$(pwd)" "$@"
 fi
