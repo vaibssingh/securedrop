@@ -105,6 +105,12 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 		|| exit 1; \
 	done
 
+# Bandit is a static code analysis tool to detect security vulnerabilities in Python applications  
+# https://wiki.openstack.org/wiki/Security/Projects/Bandit
+.PHONY: bandit
+bandit: ## Run bandit excluding manage.py 
+	@bandit -r . -lll -x securedrop/manage.py
+
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile.
 	pip-compile --generate-hashes --output-file securedrop/requirements/admin-requirements.txt \
