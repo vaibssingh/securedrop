@@ -77,6 +77,15 @@ jobs:
       - store_artifacts:
           path: ~/test-results
 
+  admin-tests:
+    docker:
+      - image: gcr.io/cloud-builders/docker
+    steps:
+      - run: apt-get install -y make
+      - checkout
+      - setup_remote_docker
+      - run: cd admin ; make test
+
   staging-test:
     docker:
       - image: quay.io/freedomofpress/circleci-docker:latest
@@ -175,6 +184,7 @@ workflows:
     jobs:
       - lint
       - tests
+      - admin-tests
       - staging-test:
           requires:
             - lint
