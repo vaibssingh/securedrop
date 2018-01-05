@@ -169,6 +169,9 @@ jobs:
       - store_artifacts:
           path: /root/sd/junit
 
+      - store_artifacts:
+          path: /root/sd/raw-test-output
+
 workflows:
   version: 2
   securedrop_ci:
