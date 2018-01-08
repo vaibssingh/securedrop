@@ -1,11 +1,5 @@
 #!/usr/bin/env ansible-playbook
 ---
-- name: Ensure validation is run before prod install
-  hosts: localhost
-  connection: local
-  roles:
-    - { role: validate, tags: validate }
-
 - name: Add FPF apt repository and install base packages.
   hosts: securedrop
   roles:

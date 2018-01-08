@@ -91,15 +91,15 @@ def reset(args):
 
     # Clear submission/reply storage
     try:
-        os.stat(config.STORE_DIR)
+        os.stat(args.store_dir)
     except OSError:
         pass
     else:
-        for source_dir in os.listdir(config.STORE_DIR):
+        for source_dir in os.listdir(args.store_dir):
             try:
                 # Each entry in STORE_DIR is a directory corresponding
                 # to a source
-                shutil.rmtree(os.path.join(config.STORE_DIR, source_dir))
+                shutil.rmtree(os.path.join(args.store_dir, source_dir))
             except OSError:
                 pass
     return 0
@@ -378,11 +378,24 @@ def translate_desktop(args):
         """.format(translations_dir=args.translations_dir,
                    sources=" ".join(args.source)))
 
+def how_many_submissions_today(args):
+    count_file = os.path.join(args.data_root, 'submissions_today.txt')
+    sh("""
+    find {dir} -type f -a -mmin -1440 | wc -l > {count_file}
+    """.format(dir=args.store_dir,
+               count_file=count_file))
 
 def get_args():
     parser = argparse.ArgumentParser(prog=__file__, description='Management '
                                      'and testing utility for SecureDrop.')
     parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument('--data-root',
+                        default=config.SECUREDROP_DATA_ROOT,
+                        help=('directory in which the securedrop '
+                              'data is stored'))
+    parser.add_argument('--store-dir',
+                        default=config.STORE_DIR,
+                        help=('directory in which the documents are stored'))
     subps = parser.add_subparsers()
     # Run WSGI app
     run_subp = subps.add_parser('run', help='Run the Werkzeug source & '
@@ -417,9 +430,17 @@ def get_args():
 
     set_translate_messages_parser(subps)
     set_translate_desktop_parser(subps)
+    set_how_many_submissions_today(subps)
 
     return parser
 
+
+def set_how_many_submissions_today(subps):
+    parser = subps.add_parser(
+        'how-many-submissions-today',
+        help=('Update the file containing '
+              'the number of submissions in the past 24h'))
+    parser.set_defaults(func=how_many_submissions_today)
 
 def set_translate_parser(subps,
                          parser,

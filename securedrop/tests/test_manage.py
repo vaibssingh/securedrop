@@ -15,7 +15,6 @@ import shutil
 import subprocess
 import sys
 import time
-import unittest
 import version
 import utils
 
@@ -44,11 +43,11 @@ class TestManagePy(object):
         assert 'VISIBLE' in caplog.text
 
 
-class TestManagementCommand(unittest.TestCase):
-    def setUp(self):
+class TestManagementCommand(object):
+    def setup(self):
         utils.env.setup()
 
-    def tearDown(self):
+    def teardown(self):
         utils.env.teardown()
 
     @mock.patch("__builtin__.raw_input", return_value='jen')
@@ -78,9 +77,9 @@ class TestManagementCommand(unittest.TestCase):
 
         # We will try to provide one invalid and one valid secret
         return_value = manage._add_user()
-        self.assertEqual(return_value, 0)
-        self.assertIn('Try again.', sys.stdout.getvalue())
-        self.assertIn('successfully added', sys.stdout.getvalue())
+        assert return_value == 0
+        assert 'Try again.' in sys.stdout.getvalue()
+        assert 'successfully added' in sys.stdout.getvalue()
 
     @mock.patch("manage._get_username", return_value='foo-bar-baz')
     @mock.patch("manage._get_yubikey_usage", return_value=False)
@@ -93,13 +92,13 @@ class TestManagementCommand(unittest.TestCase):
 
         # Inserting the user for the first time should succeed
         return_value = manage._add_user()
-        self.assertEqual(return_value, 0)
-        self.assertIn('successfully added', sys.stdout.getvalue())
+        assert return_value == 0
+        assert 'successfully added' in sys.stdout.getvalue()
 
         # Inserting the user for a second time should fail
         return_value = manage._add_user()
-        self.assertEqual(return_value, 1)
-        self.assertIn('ERROR: That username is already taken!',
+        assert return_value == 1
+        assert ('ERROR: That username is already taken!' in
                       sys.stdout.getvalue())
 
     @mock.patch("manage._get_username", return_value='test-user-56789')
@@ -113,10 +112,10 @@ class TestManagementCommand(unittest.TestCase):
                          mock_user_to_delete,
                          mock_user_del_confirm):
         return_value = manage._add_user()
-        self.assertEqual(return_value, 0)
+        assert return_value == 0
 
         return_value = manage.delete_user(args=None)
-        self.assertEqual(return_value, 0)
+        assert return_value == 0
 
     @mock.patch("manage._get_username_to_delete",
                 return_value='does-not-exist')
@@ -127,28 +126,30 @@ class TestManagementCommand(unittest.TestCase):
                                       mock_user_del_confirm,
                                       mock_stdout):
         return_value = manage.delete_user(args=None)
-        self.assertEqual(return_value, 0)
-        self.assertIn('ERROR: That user was not found!',
+        assert return_value == 0
+        assert ('ERROR: That user was not found!' in
                       sys.stdout.getvalue())
 
     @mock.patch("__builtin__.raw_input", return_value='test-user-12345')
     def test_get_username_to_delete(self, mock_username):
         return_value = manage._get_username_to_delete()
-        self.assertEqual(return_value, 'test-user-12345')
+        assert return_value == 'test-user-12345'
 
     def test_reset(self):
         test_journalist, _ = utils.db_helper.init_journalist()
         user_should_be_gone = test_journalist.username
 
-        return_value = manage.reset(args=None)
+        args = argparse.Namespace(store_dir=config.STORE_DIR,
+                                  verbose=logging.DEBUG)
+        return_value = manage.reset(args)
 
-        self.assertEqual(return_value, 0)
+        assert return_value == 0
         assert os.path.exists(config.DATABASE_FILE)
         assert os.path.exists(config.STORE_DIR)
 
         # Verify journalist user present in the database is gone
         db_session.remove()  # Close session and get a session on the new db
-        with self.assertRaises(NoResultFound):
+        with pytest.raises(NoResultFound):
             Journalist.query.filter_by(username=user_should_be_gone).one()
 
 
@@ -364,6 +365,21 @@ class TestManage(object):
         manage.clean_tmp(args)
         assert 'FILE removed' in caplog.text
 
+    def test_how_many_submissions_today(self, tmpdir):
+        data_root = tmpdir
+        store_dir = tmpdir.join('store')
+        args = argparse.Namespace(data_root=str(data_root),
+                                  store_dir=str(store_dir),
+                                  verbose=logging.DEBUG)
+        
+        store_dir.join('recent').ensure()
+        older = store_dir.join('older')
+        older.ensure()
+        older.setmtime(time.time() - 2*24*60*60)
+        manage.how_many_submissions_today(args)
+        count_file = data_root.join('submissions_today.txt')
+        assert count_file.read() == "1\n"
+        
 
 class TestSh(object):
 
