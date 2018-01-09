@@ -21,7 +21,7 @@ pipeline {
                 git branch: 'develop', url: 'https://github.com/freedomofpress/securedrop.git'
 
                 sh '''. devops/scripts/aws-jenkins-venv.sh
-                    |pip install -r testinfra/requirements.txt '''.stripMargin()
+                    |pip install -r securedrop/requirements/develop-requirements.txt '''.stripMargin()
 
                 sh '''. devops/scripts/aws-jenkins-venv.sh
                     |make build-debs
