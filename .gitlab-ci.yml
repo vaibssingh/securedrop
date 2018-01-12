@@ -1,0 +1,7 @@
+jobs:
+  script: |
+    cd devops/openstack
+    source bootstrap
+    perl -p -e 's/\$(\w+)/$ENV{$1}/e' < clouds.yml.example > clouds.yml
+    cd ../..
+    molecule test -s openstack

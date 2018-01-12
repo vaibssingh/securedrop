@@ -1,0 +1,5 @@
+all:
+  children:
+#     my_group:
+#       hosts:
+#         some_host:

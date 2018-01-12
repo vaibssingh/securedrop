@@ -1,0 +1,6 @@
+all:
+  hosts:
+    mon:
+      ansible_user: ubuntu
+    app:
+      ansible_user: ubuntu

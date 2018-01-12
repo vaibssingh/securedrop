@@ -1,0 +1,11 @@
+if [ "$(id -u)" != 0 ] ; then
+   SUDO=sudo
+fi
+
+$SUDO apt-get update
+$SUDO apt-get install -y python-virtualenv git libssl-dev gcc python-dev make
+rm -fr virtualenv
+virtualenv virtualenv
+source virtualenv/bin/activate
+pip install -r requirements.txt
+chmod 600 id_rsa # cannot be stored in git
