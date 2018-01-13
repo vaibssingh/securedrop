@@ -15,7 +15,8 @@ assets:
 
 .PHONY: images
 images:
-	docker build $(EXTRA_BUILD_ARGS) -f Dockerfile -t $(IMAGE)-test:$(TAG) .
+	docker build $(EXTRA_BUILD_ARGS) -f Dockerfile-base -t $(IMAGE)-base:$(TAG) .
+	sed -e 's/%TAG%/$(TAG)' < Dockerfile | docker build $(EXTRA_BUILD_ARGS) -f - -t $(IMAGE)-test:$(TAG) .
 
 TESTFILES ?= tests
 .PHONY: test

@@ -1,0 +1,8 @@
+	docker run \
+		--name securedrop-cli \
+		--rm \
+		--user=$(id -u) \
+		-v $(git rev-parse --show-toplevel):$(git rev-parse --show-toplevel) \
+		-w $(pwd) \
+		-ti securedrop-base \
+		"${@:-base}"
