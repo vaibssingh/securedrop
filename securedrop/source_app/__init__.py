@@ -28,6 +28,10 @@ def create_app(config):
     app.request_class = RequestThatSecuresFileUploads
     app.config.from_object(config.SourceInterfaceFlaskConfig)
 
+    db_session.execute('PRAGMA secure_delete = ON')
+    db_session.execute('PRAGMA auto_vacuum = FULL')
+    db_session.commit()
+
     # The default CSRF token expiration is 1 hour. Since large uploads can
     # take longer than an hour over Tor, we increase the valid window to 24h.
     app.config['WTF_CSRF_TIME_LIMIT'] = 60 * 60 * 24

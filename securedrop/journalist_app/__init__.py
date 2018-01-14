@@ -25,6 +25,10 @@ def create_app(config):
 
     app.config.from_object(config.JournalistInterfaceFlaskConfig)
 
+    db_session.execute('PRAGMA secure_delete = ON')
+    db_session.execute('PRAGMA auto_vacuum = FULL')
+    db_session.commit()
+
     CSRFProtect(app)
     Environment(app)
 
