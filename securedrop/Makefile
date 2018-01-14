@@ -24,7 +24,7 @@ test:
 		-e COMMIT_SHA=$(TAG) \
 		$(EXTRA_TEST_ARGS) \
 		--name $(IMAGE)-test \
-		-ti $(IMAGE)-test:$(TAG) \
+		$(IMAGE)-test:$(TAG) \
 		./bin/test -v $(TESTFILES)
 
 .PHONY: testclean
