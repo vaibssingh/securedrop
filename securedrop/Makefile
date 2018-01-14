@@ -15,7 +15,10 @@ assets:
 
 .PHONY: images
 images:
-	docker build $(EXTRA_BUILD_ARGS) -f Dockerfile -t $(IMAGE)-test:$(TAG) .
+	docker build $(EXTRA_BUILD_ARGS) -f Dockerfile \
+	   --build-arg=USER_ID=$(shell id -u) \
+	   --build-arg=USER_NAME=$(USER) \
+	   -t $(IMAGE)-test:$(TAG) .
 
 TESTFILES ?= tests
 .PHONY: test
