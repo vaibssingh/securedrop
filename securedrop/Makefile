@@ -1,25 +1,25 @@
+DEFAULT_GOAL: help
 TAG ?= $(shell git rev-parse HEAD)
 IMAGE = securedrop
 
 .PHONY: lint
-lint:
+lint: ## Run the python linter with the project's default error settings
 	find . -name '*.py' | xargs pylint --reports=no --errors-only --disable=import-error
 
 .PHONY: lint-full
-lint-full:
+lint-full:  ## Run the python linter with nothing disabled
 	find . -name '*.py' | xargs pylint
 
-.PHONY: assets
-assets:
-	sass
-
 .PHONY: images
-images:
-	docker build $(EXTRA_BUILD_ARGS) -f Dockerfile -t $(IMAGE)-test:$(TAG) .
+images: ## Build the docker images
+	docker build $(EXTRA_BUILD_ARGS) -f Dockerfile \
+	   --build-arg=USER_ID=$(shell id -u) \
+	   --build-arg=USER_NAME=$(USER) \
+	   -t $(IMAGE)-test:$(TAG) .
 
 TESTFILES ?= tests
 .PHONY: test
-test:
+test: ## Run the test suite in a dockerized environment
 	docker run \
 		-e COMMIT_SHA=$(TAG) \
 		$(EXTRA_TEST_ARGS) \
@@ -28,32 +28,17 @@ test:
 		./bin/test -v $(TESTFILES)
 
 .PHONY: testclean
-testclean:
+testclean: ## Remove the docker test image
 	-docker rm -f $(IMAGE)-test
 
 .PHONY: dev
-dev:
-	docker run \
-		-p8080:8080 -p8081:8081 \
-		$(EXTRA_DEV_ARGS) \
-		-v $(shell pwd):/app \
-		--rm \
-		-ti $(IMAGE)-test:$(TAG) \
-		./bin/dev
-
-.PHONY: dev-shell
-dev-shell:
-	docker run \
-		-p8080:8080 -p8081:8081 \
-		$(EXTRA_DEV_ARGS) \
-		-v $(shell pwd):/app \
-		-ti $(IMAGE)-test:$(TAG) \
-		bash
+dev: ## Run the dev server
+	./bin/dev-shell ./manage.py run
 
 config.py: test-config
 
 .PHONY: test-config
-test-config:
+test-config: ## Generate the test config
 	source_secret_key=$(shell head -c 32 /dev/urandom | base64) \
 	journalist_secret_key=$(shell head -c 32 /dev/urandom | base64) \
 	scrypt_id_pepper=$(shell head -c 32 /dev/urandom | base64) \
@@ -65,12 +50,22 @@ test-config:
          ctx = open("config.py", "w").write(env.get_template("config.py.example").render(ctx))'
 
 .PHONY: update-user-guides
-update-user-guides:
+update-user-guides: ## Runs the page layout tests to regenerate screenshots
 	docker run \
 		--name $(IMAGE)-update-user-guides \
 		--rm \
-		-e USER_ID=$(shell id -u) \
-		-v $(shell git rev-parse --show-toplevel):$(shell git rev-parse --show-toplevel) \
-		-w $(shell pwd) \
+		--user $(USER) \
+		--volume $(shell git rev-parse --show-toplevel):$(shell git rev-parse --show-toplevel) \
+		--workdir $(shell pwd) \
+		--publish 5901:5901 \
 		-ti $(IMAGE)-test:$(TAG) \
 		./bin/update-user-guides
+
+# For an explanation of this shell magic, see the Makefile in the root of the repository
+.PHONY: help
+help: ## Print this message and exit.
+	@printf "Makefile for developing and testing SecureDrop.\n"
+	@printf "Subcommands:\n\n"
+	@awk 'BEGIN {FS = ":.*?## "} /^[0-9a-zA-Z_-]+:.*?## / {printf "\033[36m%s\033[0m : %s\n", $$1, $$2}' $(MAKEFILE_LIST) \
+		| sort \
+		| column -s ':' -t

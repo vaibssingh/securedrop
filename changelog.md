@@ -1,10 +1,20 @@
 # Changelog
 
-## 0.5.1-rc3
+## 0.5.2
+
+* Replace PyCrypto (#2903).
+* Use `max_fail_percentage` to force immediate Ansible exits in playbook runs (#2922).
+* Bugfix: Dynamically allocate firewall during OSSEC registration (#2748).
+* Bugfix: Add all languages to sdconfig prompt (#2935).
+
+The issues for this release were tracked in the 0.5.2 milestone on Github:
+https://github.com/freedomofpress/securedrop/milestone/41
+
+## 0.5.1
 
 ### Web Applications
 
-* Add zh-Hant locale (#2830).
+* Add Arabic, Chinese, Turkish and Italian translations (#2830).
 * Enable administrators to update the SecureDrop logo via the Admin Interface (#2769).
 * Enable administrators to send test OSSEC alerts via the Admin Interface (#2771).
 * Improve the language menu (#2733).

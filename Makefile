@@ -27,6 +27,18 @@ ci-lint-image: ## Builds linting container.
 ci-lint: ## Runs linting in linting container.
 	docker run --rm -ti -v /var/run/docker.sock:/var/run/docker.sock securedrop-lint:${TAG}
 
+.PHONY: ci-typelint-image
+ci-typelint-image: ## Builds type glinting container.
+	docker build $(EXTRA_BUILD_ARGS) -t securedrop-typelint:${TAG} -f devops/docker/Dockerfile.typeannotation .
+
+.PHONY: ci-typelint
+ci-typelint: ## Runs type linting in container.
+	docker run --rm -ti -v /var/run/docker.sock:/var/run/docker.sock securedrop-typelint:${TAG}
+
+.PHONY: ansible-config-lint
+ansible-config-lint: ## Runs custom Ansible env linting tasks.
+	molecule verify -s ansible-config
+
 .PHONY: docs-lint
 docs-lint: ## Check documentation for common syntax errors.
 # The `-W` option converts warnings to errors.
@@ -40,11 +52,7 @@ docs: ## Build project documentation in live reload for editing
 
 .PHONY: flake8
 flake8: ## Validates PEP8 compliance for Python source files.
-	flake8 --exclude='config.py' testinfra securedrop/securedrop-admin \
-		securedrop/*.py securedrop/management \
-		securedrop/journalist_app/*.py \
-		securedrop/source_app/*.py securedrop/tests/pages-layout/*.py \
-		securedrop/tests/functional/*.py securedrop/tests/*.py
+	flake8 --exclude='config.py' --exclude='.venv/'
 
 .PHONY: app-lint
 app-lint: ## Tests pylint lint rule compliance.
@@ -86,7 +94,7 @@ shellcheckclean: ## Cleans up temporary container associated with shellcheck tar
 	@docker rm -f shellcheck-targets
 
 .PHONY: lint
-lint: docs-lint app-lint flake8 html-lint yamllint shellcheck ## Runs all linting tools (docs, pylint, flake8, HTML, YAML, shell).
+lint: docs-lint app-lint flake8 html-lint yamllint shellcheck ansible-config-lint ## Runs all linting tools (docs, pylint, flake8, HTML, YAML, shell, ansible-config).
 
 .PHONY: docker-build-ubuntu
 docker-build-ubuntu: ## Builds SD Ubuntu docker container
@@ -107,10 +115,9 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 
 .PHONY: update-pip-requirements
 update-pip-requirements: ## Updates all Python requirements files via pip-compile.
-	pip-compile --generate-hashes --output-file securedrop/requirements/admin-requirements.txt \
-		securedrop/requirements/ansible.in
+	make -C admin update-pip-requirements
 	pip-compile --output-file securedrop/requirements/develop-requirements.txt \
-		securedrop/requirements/ansible.in \
+		admin/requirements-ansible.in \
 		securedrop/requirements/develop-requirements.in
 	pip-compile --output-file securedrop/requirements/test-requirements.txt \
 		securedrop/requirements/test-requirements.in
