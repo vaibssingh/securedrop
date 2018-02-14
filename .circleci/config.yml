@@ -1,116 +1,17 @@
 ---
 version: 2
 jobs:
-  docs-lint:
+  lint:
     docker:
-      - image: quay.io/freedomofpress/circleci-docker:latest
-
+      - image: gcr.io/cloud-builders/docker
     steps:
+      - run: apt-get install -y make
       - checkout
-
-      - run:
-          name: Rebase on-top of latest develop
-          command: ./devops/scripts/rebase-develop.sh
-
-      - run:
-          name: Installation pre-reqs
-          command: pip install -U -r securedrop/requirements/develop-requirements.txt
-
-      - run:
-          name: Run docs lint
-          command: make docs-lint
-
-  staging-test:
-    docker:
-      - image: quay.io/freedomofpress/circleci-docker:latest
-        environment:
-          FPF_CI: true
-          CI_SD_ENV: staging
-          CI_AWS_TYPE: t2.medium
-          FPF_GRSEC: false
-          TEST_REPORTS: /root/sd
-    working_directory: ~/sd
-
-    steps:
-
-      - checkout
-
-      - run:
-          name: Rebase on-top of latest develop
-          command: ./devops/scripts/rebase-develop.sh
-
-      - run:
-          name: Installation pre-reqs
-          command: pip install -U -r securedrop/requirements/develop-requirements.txt
-
-      - run:
-          name: Check Python dependencies for CVEs
-          command: make safety
-
       - setup_remote_docker
 
-      - run:
-          name: Run Debian builds
-          command: make build-debs
+      - run: TAG=${CIRCLE_SHA1} make ci-lint-image
 
-      - run:
-          name: Provision staging servers and run tests
-          command: make ci-go
-
-      - run:
-          name: Ensure environment torn down
-          command: molecule destroy -s aws
-          when: on_fail
-
-      - store_test_results:
-          path: /root/sd/junit
-
-      - store_artifacts:
-          path: /root/sd/junit
-
-  staging-test-with-rebase:
-    docker:
-      - image: quay.io/freedomofpress/circleci-docker:latest
-        environment:
-          FPF_CI: true
-          CI_SD_ENV: staging
-          CI_AWS_TYPE: t2.medium
-          FPF_GRSEC: false
-          TEST_REPORTS: /root/sd
-    working_directory: ~/sd
-
-    steps:
-
-      - checkout
-
-      - run:
-          name: Installation pre-reqs
-          command: pip install -U -r ./securedrop/requirements/develop-requirements.txt
-
-      - run:
-          name: Check Python dependencies for CVEs
-          command: make safety
-
-      - setup_remote_docker
-
-      - run:
-          name: Run Debian builds
-          command: make build-debs
-
-      - run:
-          name: Provision staging servers and run tests
-          command: make ci-go
-
-      - run:
-          name: Ensure environment torn down
-          command: molecule destroy -s aws
-          when: on_fail
-
-      - store_test_results:
-          path: /root/sd/junit
-
-      - store_artifacts:
-          path: /root/sd/junit
+      - run: TAG=${CIRCLE_SHA1} make ci-lint
 
   tests:
     docker:
@@ -143,7 +44,7 @@ jobs:
             set +o pipefail
             docker images
             fromtag=$(docker images |grep securedrop-test |head -n1 |awk '{print $2}')
-            cd securedrop && EXTRA_BUILD_ARGS="--cache-from securedrop-test:${fromtag:-latest}" make images TAG=${CIRCLE_SHA1}
+            cd securedrop && TAG=${CIRCLE_SHA1} EXTRA_BUILD_ARGS="--cache-from securedrop-test:${fromtag:-latest}" make images
 
       - run:
           name: Save Docker image layer cache
@@ -160,10 +61,9 @@ jobs:
       - run: mkdir -p ~/test-results
 
       - run: |
-          set +o pipefail
           export TESTFILES=$(cd securedrop; circleci tests glob 'tests/test*py' 'tests/**/test*py' |circleci tests split --split-by=timings |xargs echo)
-          docker rm -f securedrop-test |true
-          cd securedrop && make test TAG=${CIRCLE_SHA1}
+          docker rm -f securedrop-test || true
+          cd securedrop && TAG=${CIRCLE_SHA1} EXTRA_TEST_ARGS=$(bash <(curl -s https://codecov.io/env)) make test
 
       - run:
           name: Report results
@@ -177,15 +77,62 @@ jobs:
       - store_artifacts:
           path: ~/test-results
 
+  staging-test-with-rebase:
+    docker:
+      - image: quay.io/freedomofpress/circleci-docker:latest
+        environment:
+          FPF_CI: true
+          CI_SD_ENV: staging
+          CI_AWS_TYPE: t2.medium
+          FPF_GRSEC: false
+          TEST_REPORTS: /root/sd
+    working_directory: ~/sd
+
+    steps:
+
+      - checkout
+
+      - run:
+          name: Installation pre-reqs
+          command: pip install -U -r ./securedrop/requirements/develop-requirements.txt
+
+      - run:
+          name: Check Python dependencies for CVEs
+          command: make safety || true # Revert when Ansible 2.4 is used
+
+      - setup_remote_docker
+
+      - run:
+          name: Run Debian builds
+          command: make build-debs
+
+      - run:
+          name: Provision staging servers and run tests
+          command: make ci-go
+
+      - run:
+          name: Ensure environment torn down
+          command: molecule destroy -s aws
+          when: on_fail
+
+      - store_test_results:
+          path: /root/sd/junit
+
+      - store_artifacts:
+          path: /root/sd/junit
+
+      - store_artifacts:
+          path: /root/sd/raw-test-output
+
+      - store_artifacts:
+          path: /root/sd/.tor_version
+
 workflows:
   version: 2
   securedrop_ci:
     jobs:
+      - lint
       - tests
-      - docs-lint
-      - staging-test:
-          requires:
-            - docs-lint
       - staging-test-with-rebase:
           requires:
-            - docs-lint
+            - lint

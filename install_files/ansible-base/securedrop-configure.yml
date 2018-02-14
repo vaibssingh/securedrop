@@ -3,6 +3,8 @@
   hosts: localhost
   connection: local
   gather_facts: no
+  max_fail_percentage: 0
+  any_errors_fatal: yes
   tasks:
     - debug:
         msg: >-
@@ -16,6 +18,8 @@
   hosts: localhost
   connection: local
   gather_facts: no
+  max_fail_percentage: 0
+  any_errors_fatal: yes
   vars_prompt:
     - name: ssh_users
       prompt: Username for SSH access to the servers
@@ -46,15 +50,6 @@
       prompt: DNS server specified during installation.
       default: "8.8.8.8"
       private: no
-
-    - name: securedrop_header_image
-      prompt: >-
-        Local filepath to your organization's logo,
-        to be displayed on the Source Interface
-      private: no
-      # Default must be empty string, since "None" will be interpreted
-      # as filepath, causing app role to fail.
-      default: ""
 
     - name: securedrop_app_gpg_public_key
       prompt: Local filepath to public key for SecureDrop Application GPG public key
@@ -112,7 +107,7 @@
 
     - name: securedrop_supported_locales
       # the list is from the securedrop/translations repository
-      prompt: Space separated list of additional locales to support (de_DE en_US es_ES fr_FR nb_NO nl)
+      prompt: Space separated list of additional locales to support (ar de_DE en_US es_ES fr_FR it_IT nb_NO nl tr zh_Hant)
       default: ""
       private: no
 
@@ -157,8 +152,6 @@
           var_value: "{{ monitor_hostname }}"
         - var_name: dns_server
           var_value: "{{ dns_server }}"
-        - var_name: securedrop_header_image
-          var_value: "{{ securedrop_header_image }}"
         - var_name: securedrop_app_gpg_public_key
           var_value: "{{ securedrop_app_gpg_public_key }}"
         - var_name: securedrop_app_gpg_fingerprint
@@ -188,6 +181,8 @@
   hosts: localhost
   connection: local
   gather_facts: yes
+  max_fail_percentage: 0
+  any_errors_fatal: yes
   pre_tasks:
     # Use a first-found loop to avoid erroring out if the vars file doesn't
     # exist when the playbook is invoked, which is true on first run.

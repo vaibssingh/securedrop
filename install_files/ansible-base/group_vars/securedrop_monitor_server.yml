@@ -6,9 +6,10 @@ ip_info:
 
 ### Used by the install_local_deb_pkgs role ###
 local_deb_packages:
+  - "securedrop-keyring-0.1.1+{{ securedrop_app_code_version }}-amd64.deb"
+  - "securedrop-config-0.1.0+{{ securedrop_app_code_version }}-amd64.deb"
   - "securedrop-ossec-server-2.8.2+{{ securedrop_app_code_version }}-amd64.deb"
   - ossec-server-2.8.2-amd64.deb
-  - "securedrop-keyring-0.1.1+{{ securedrop_app_code_version }}-amd64.deb"
 
 # Configure the tor hidden services. The Monitor server has only one,
 # for SSH, since no web interfaces.
@@ -16,6 +17,22 @@ tor_instances:
   - service: ssh
     filename: mon-ssh-aths
 
-authd_rules:
-  - "-A INPUT -s {{ app_hostname }} -p tcp --dport 1515 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT"
-  - "-A OUTPUT -d {{ app_hostname }} -p tcp --sport 1515 -m state --state ESTABLISHED,RELATED -j ACCEPT"
+authd_iprules:
+  - chain: INPUT
+    source: "{{ app_hostname  }}"
+    proto: tcp
+    dest_port: 1515
+    match: state
+    cstate: "NEW,ESTABLISHED,RELATED"
+    jump: ACCEPT
+
+  - chain: OUTPUT
+    dest: "{{ app_hostname }}"
+    proto: tcp
+    source_port: 1515
+    match: state
+    cstate: "ESTABLISHED,RELATED"
+    jump: ACCEPT
+
+# Declare Monitor Server as OSSEC server role.
+ossec_is_server: yes

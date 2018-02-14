@@ -10,6 +10,7 @@ RUN gem install sass -v 3.4.23
 # test requirements:
 RUN apt-get install -y firefox
 RUN apt-get install -y git xvfb haveged curl gettext paxctl
+RUN apt-get install -y x11vnc
 
 # pinned firefox version for selenium compatibility. See bd795e2f5865b4f6e6e1b88bcbbacef704675c74
 ENV FIREFOX_CHECKSUM=88d25053306d33658580973b063cd459a56e3596a3a298c1fb8ab1d52171d860
@@ -22,14 +23,14 @@ RUN curl -LO https://launchpad.net/~ubuntu-mozilla-security/+archive/ubuntu/ppa/
 #
 # This can be removed when upgrading to something more recent than trusty
 #
-RUN echo deb http://archive.ubuntu.com/ubuntu/ zesty main > /etc/apt/sources.list.d/zesty.list
+RUN echo deb http://archive.ubuntu.com/ubuntu/ xenial main > /etc/apt/sources.list.d/xenial.list
 RUN apt-get update
 RUN apt-get install -y gettext
-RUN rm /etc/apt/sources.list.d/zesty.list
+RUN rm /etc/apt/sources.list.d/xenial.list
 RUN apt-get update
 
 COPY requirements requirements
-RUN pip install -r requirements/securedrop-requirements.txt
+RUN pip install -r requirements/securedrop-app-code-requirements.txt
 
 # test requirements:
 RUN pip install -r requirements/test-requirements.txt
@@ -50,5 +51,6 @@ RUN make test-config
 RUN ./manage.py reset
 
 EXPOSE 8080 8081
+EXPOSE 5901
 
 CMD ["./manage.py", "run"]
